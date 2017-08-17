@@ -6,4 +6,7 @@
 #
 # Copyright Nils Schaetti, University of Neuchâtel <nils.schaetti@unine.ch>
 
-
+# Imports
+from .IQLAText import IQLAText
+from .IQLAAuthor import IQLAAuthor
+from .IQLACorpus import IQLACorpus

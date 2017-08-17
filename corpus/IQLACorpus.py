@@ -9,6 +9,7 @@
 # Imports
 import json
 import os
+from .IQLAAuthor import IQLAAuthor
 
 
 # Class to access to the IQLA corpus
@@ -37,13 +38,28 @@ class IQLACorpus(object):
     ########################################
 
     # Get list of authors
-    def authors(self):
+    def get_authors(self):
         """
         Get list of authors
         :return:
         """
-        pass
+        return self._authors
     # end authors
+
+    # Get author
+    def get_author(self, author_name):
+        """
+        Get author
+        :param author_name:
+        :return:
+        """
+        for author in self._authors:
+            if author.get_name() == author_name:
+                return author
+            # end if
+        # end for
+        return None
+    # end get_author
 
     # Get the number of authors
     def get_n_authors(self):
@@ -62,6 +78,25 @@ class IQLACorpus(object):
         """
         return len(self._texts)
     # end get_n_texts
+
+    # Get texts
+    def get_texts(self):
+        """
+        Get texts
+        :return:
+        """
+        return self._texts
+    # end get_texts
+
+    # Get author's texts
+    def get_author_texts(self, author_name):
+        """
+        Get author's texts
+        :param author_name:
+        :return:
+        """
+        return self.get_author(author_name).get_texts()
+    # end get_author_texts
 
     ########################################
     # Override
@@ -95,8 +130,17 @@ class IQLACorpus(object):
         Load
         :return:
         """
-        self._authors = json.load(os.path.join(self._dataset_path, "authors.json"))
-        self._texts = json.load(os.path.join(self._dataset_path, "authors.json"))
+        authors_infos = json.load(open(os.path.join(self._dataset_path, "authors.json"), 'r'))
+        for author_name in authors_infos.keys():
+            # New author
+            author = IQLAAuthor(name=author_name, dataset_path=self._dataset_path)
+
+            # Add texts
+            self._texts.append(author.get_texts())
+
+            # Add
+            self._authors.append(author)
+        # end for
     # end _load
 
 # end IQLACorpus
