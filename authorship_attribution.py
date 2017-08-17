@@ -24,19 +24,15 @@ if __name__ == "__main__":
     # Load dataset
     iqla = cp.IQLACorpus(dataset_path=args.dataset)
 
-    # Load all authors
-    for author in iqla.get_authors():
-        print(author)
-        for text in author.get_texts():
-            print(text)
+    # Cross validation
+    cross_validation = nsNLP.validation.CrossValidation(iqla.get_texts())
+
+    # For each fold
+    for training_set, test_set in cross_validation:
+        for sample in test_set:
+            print(sample.get_author())
         # end for
         print("")
     # end for
-
-    # Get Ferrante
-    ferrante = iqla.get_author("Ferrante")
-
-    # Display first text
-    print(ferrante.get_texts()[0].get_text())
 
 # end if
