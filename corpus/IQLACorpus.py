@@ -136,7 +136,9 @@ class IQLACorpus(object):
             author = IQLAAuthor(name=author_name, dataset_path=self._dataset_path)
 
             # Add texts
-            self._texts.append(author.get_texts())
+            for text in author.get_texts():
+                self._texts.append(text)
+            # end for
 
             # Add
             self._authors.append(author)
