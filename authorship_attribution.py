@@ -57,5 +57,33 @@ if __name__ == "__main__":
         k += 1
     # end for
 
+    # Models validation
+    models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
+
+    # Add 1-gram statistical model with DP smoothing
+    models_validation.add_model(
+        nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='dp',
+                                                  smoothing_param=0.1))
+
+    # Add 1-gram statistical model with JM smoothing
+    models_validation.add_model(
+        nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='jm',
+                                                  smoothing_param=0.1))
+
+    # Compare models
+    results, comparisons = models_validation.compare()
+
+    # Display
+    print(u"10-Fold cross validation for each models : ")
+    for model_name in results.keys():
+        print(u"{} : {}".format(model_name, results[model_name]))
+    # end for
+    print(u"")
+
+    # Display t-tests results
+    print(u"Two samples t-test results : ")
+    for model1_name, model2_name in comparisons.keys():
+        print(u"{} vs {} : {}".format(comparisons[(model1_name, model2_name)] * 100.0))
+    # end for
 
 # end if
