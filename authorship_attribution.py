@@ -27,12 +27,35 @@ if __name__ == "__main__":
     # Cross validation
     cross_validation = nsNLP.validation.CrossValidation(iqla.get_texts())
 
+    # Model
+    model = nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='dp',
+                                                      smoothing_param=0.1)
+
     # For each fold
+    k = 0
     for training_set, test_set in cross_validation:
-        for sample in test_set:
-            print(sample.get_author())
+        print(u"Fold {}".format(k))
+
+        # Sizes
+        training_size = len(training_set)
+
+        # Training
+        index = 1
+        for sample in training_set:
+            print(u"Training on {}/{} : {}".format(index, training_size, sample.get_path()))
+            model.train(sample.get_text(), sample.get_author().get_name(), verbose=True)
+            index += 1
         # end for
-        print("")
+
+        # Success rate on training set
+        print(u"Training success rate : {}".format(nsNLP.tools.Metrics.success_rate(model, training_set)))
+
+        # Success rate on test set
+        print(u"Test success rate : {}".format(nsNLP.tools.Metrics.success_rate(model, test_set)))
+
+        # Next fold
+        k += 1
     # end for
+
 
 # end if
