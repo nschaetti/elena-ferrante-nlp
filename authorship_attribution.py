@@ -47,9 +47,6 @@ if __name__ == "__main__":
             index += 1
         # end for
 
-        # Success rate on training set
-        print(u"Training success rate : {}".format(nsNLP.tools.Metrics.success_rate(model, training_set)))
-
         # Success rate on test set
         print(u"Test success rate : {}".format(nsNLP.tools.Metrics.success_rate(model, test_set)))
 
@@ -58,7 +55,7 @@ if __name__ == "__main__":
     # end for
 
     # Models validation
-    models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
+    """models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
 
     # Add 1-gram statistical model with DP smoothing
     models_validation.add_model(
@@ -84,6 +81,6 @@ if __name__ == "__main__":
     print(u"Two samples t-test results : ")
     for model1_name, model2_name in comparisons.keys():
         print(u"{} vs {} : {}".format(comparisons[(model1_name, model2_name)] * 100.0))
-    # end for
+    # end for"""
 
 # end if
