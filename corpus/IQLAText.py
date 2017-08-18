@@ -7,12 +7,12 @@
 # Copyright Nils Schaetti, University of Neuchâtel <nils.schaetti@unine.ch>
 
 # Imports
-import json
-import os
+import nsNLP
+import codecs
 
 
 # Class to access to a IQLA text
-class IQLAText(object):
+class IQLAText(nsNLP.data.Sample):
     """
     Class to access to a IQLA text
     """
@@ -38,7 +38,7 @@ class IQLAText(object):
         Get text
         :return:
         """
-        return open(self._text_path, 'r').read()
+        return codecs.open(self._text_path, 'r', encoding='utf-8').read()
     # end text
 
     # Get author
@@ -49,6 +49,33 @@ class IQLAText(object):
         """
         return self._author
     # end author
+
+    # Get path
+    def get_path(self):
+        """
+        Get path
+        :return:
+        """
+        return self._text_path
+    # end get_path
+
+    # Get X
+    def x(self):
+        """
+        Get X
+        :return:
+        """
+        return self.get_text()
+    # end x
+
+    # Get Y
+    def y(self):
+        """
+        Get Y
+        :return:
+        """
+        return self.get_author().get_name()
+    # end y
 
     ########################################
     # Override

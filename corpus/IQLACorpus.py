@@ -61,6 +61,19 @@ class IQLACorpus(object):
         return None
     # end get_author
 
+    # Get authors list
+    def get_authors_list(self):
+        """
+        Get authors list
+        :return:
+        """
+        result = list()
+        for author in self._authors:
+            result.append(author.get_name())
+        # end for
+        return result
+    # end get_authors_list
+
     # Get the number of authors
     def get_n_authors(self):
         """
