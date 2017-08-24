@@ -32,7 +32,7 @@ if __name__ == "__main__":
                                                       smoothing_param=0.1)
 
     # For each fold
-    k = 0
+    """k = 0
     for training_set, test_set in cross_validation:
         print(u"Fold {}".format(k))
 
@@ -52,10 +52,10 @@ if __name__ == "__main__":
 
         # Next fold
         k += 1
-    # end for
+    # end for"""
 
     # Models validation
-    """models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
+    models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
 
     # Add 1-gram statistical model with DP smoothing
     models_validation.add_model(
@@ -66,6 +66,10 @@ if __name__ == "__main__":
     models_validation.add_model(
         nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='jm',
                                                   smoothing_param=0.1))
+
+    # Add TF-IDF
+    models_validation.add_model(
+        nsNLP.tfidf.TFIDFTextClassifier(classes=iqla.get_authors_list()))
 
     # Compare models
     results, comparisons = models_validation.compare()
@@ -80,7 +84,7 @@ if __name__ == "__main__":
     # Display t-tests results
     print(u"Two samples t-test results : ")
     for model1_name, model2_name in comparisons.keys():
-        print(u"{} vs {} : {}".format(comparisons[(model1_name, model2_name)] * 100.0))
-    # end for"""
+        print(u"{} vs {} : {}".format(model1_name, model2_name, comparisons[(model1_name, model2_name)] * 100.0))
+    # end for
 
 # end if
