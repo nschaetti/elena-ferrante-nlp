@@ -9,6 +9,7 @@
 import nsNLP
 import argparse
 import corpus as cp
+import numpy as np
 
 # Main function
 if __name__ == "__main__":
@@ -26,10 +27,6 @@ if __name__ == "__main__":
 
     # Cross validation
     cross_validation = nsNLP.validation.CrossValidation(iqla.get_texts())
-
-    # Model
-    model = nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='dp',
-                                                      smoothing_param=0.1)
 
     # For each fold
     """k = 0
@@ -58,18 +55,35 @@ if __name__ == "__main__":
     models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
 
     # Add 1-gram statistical model with DP smoothing
-    models_validation.add_model(
-        nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='dp',
-                                                  smoothing_param=0.1))
+    for smoothing_param in np.arange(1, 100001, 10000):
+        models_validation.add_model(
+            nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='dp',
+                                                      smoothing_param=smoothing_param))
+    # end for
 
     # Add 1-gram statistical model with JM smoothing
-    models_validation.add_model(
-        nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='jm',
-                                                  smoothing_param=0.1))
+    for smoothing_param in np.arange(0.05, 1.05, 0.1):
+        models_validation.add_model(
+            nsNLP.statistical_models.SLTextClassifier(classes=iqla.get_authors_list(), smoothing='jm',
+                                                      smoothing_param=smoothing_param))
+    # end for
 
     # Add TF-IDF
-    models_validation.add_model(
-        nsNLP.tfidf.TFIDFTextClassifier(classes=iqla.get_authors_list()))
+    models_validation.add_model(nsNLP.tfidf.TFIDFTextClassifier(classes=iqla.get_authors_list()))
+
+    # Add 2-gram statistical model with DP smoothing
+    for smoothing_param in np.arange(0, 100000, 10000):
+        models_validation.add_model(
+            nsNLP.statistical_models.SL2GramTextClassifier(classes=iqla.get_authors_list(), smoothing='dp',
+                                                           smoothing_param=smoothing_param))
+    # end for
+
+    # Add 2-gram statistical model with DP smoothing
+    for smoothing_param in np.arange(0.05, 1.05, 0.1):
+        models_validation.add_model(
+            nsNLP.statistical_models.SL2GramTextClassifier(classes=iqla.get_authors_list(), smoothing='jm',
+                                                           smoothing_param=smoothing_param))
+    # end for
 
     # Compare models
     results, comparisons = models_validation.compare()
