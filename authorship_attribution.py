@@ -20,39 +20,32 @@ if __name__ == "__main__":
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
     parser.add_argument("--k", type=int, help="k-Fold cross validation", default=10)
+    parser.add_argument("--n-authors", type=int, help="Number of authors (-1: all)", default=-1)
     args = parser.parse_args()
 
     # Load dataset
     iqla = cp.IQLACorpus(dataset_path=args.dataset)
 
-    # Cross validation
-    cross_validation = nsNLP.validation.CrossValidation(iqla.get_texts())
+    # Authors
 
-    # For each fold
-    """k = 0
-    for training_set, test_set in cross_validation:
-        print(u"Fold {}".format(k))
+    # Select samples
+    samples = list()
+    for index, author in enumerate(iqla.get_authors()):
+        if args.n_authors == -1 or index < args.n_authors:
+            for text_sample in author.get_texts():
+                samples.append(text_sample)
+            # end for
+        else:
+            break
+        # end if
+    # end for
 
-        # Sizes
-        training_size = len(training_set)
-
-        # Training
-        index = 1
-        for sample in training_set:
-            print(u"Training on {}/{} : {}".format(index, training_size, sample.get_path()))
-            model.train(sample.get_text(), sample.get_author().get_name(), verbose=True)
-            index += 1
-        # end for
-
-        # Success rate on test set
-        print(u"Test success rate : {}".format(nsNLP.tools.Metrics.success_rate(model, test_set)))
-
-        # Next fold
-        k += 1
-    # end for"""
+    for sample in samples:
+        print(sample.get_author().get_name())
+    # end for
 
     # Models validation
-    models_validation = nsNLP.validation.ModelsValidation(iqla.get_texts())
+    models_validation = nsNLP.validation.ModelsValidation(samples)
 
     # Add 1-gram statistical model with DP smoothing
     for smoothing_param in np.arange(1, 100001, 10000):
