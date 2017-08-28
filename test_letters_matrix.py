@@ -35,7 +35,6 @@ if __name__ == "__main__":
     grams = nsNLP.features.Letter2Grams(text, alphabet=ITALIAN_APHLABET, punc=ITALIAN_PUNC)
 
     # Print 2-grams
-    print(grams.get_beginning_letters(uppercase=False))
-    print(grams.get_ending_letters(uppercase=False))
+    print(grams.get_beginning_2grams(uppercase=False))
 
 # end if
