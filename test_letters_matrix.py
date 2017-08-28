@@ -15,6 +15,9 @@ import os
 import json
 import codecs
 
+ITALIAN_APHLABET = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyzAÀBCDEÈÉFGHIÌÍÎJKLMNOÒÓPQRSTUÙÚVWXYZ"
+ITALIAN_PUNC = u".,;:'!?«»"
+
 # Main function
 if __name__ == "__main__":
 
@@ -26,9 +29,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read text
-    text = codecs.open(args.file, 'w', encoding='utf-8')
+    text = codecs.open(args.file, 'r', encoding='utf-8').read()
 
     # 2-grams
-    grams = nsNLP.features.Letter2Grams(text, alphabet=u"abcdefghilmnopqrstuvz", punc=u".,;:'!?")
+    grams = nsNLP.features.Letter2Grams(text, alphabet=ITALIAN_APHLABET, punc=ITALIAN_PUNC)
+
+    # Print 2-grams
+    print(grams.get_beginning_letters(uppercase=False))
+    print(grams.get_ending_letters(uppercase=False))
 
 # end if
