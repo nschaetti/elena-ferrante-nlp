@@ -8,11 +8,6 @@
 
 import nsNLP
 import argparse
-import corpus as cp
-import random
-import string
-import os
-import json
 import codecs
 
 ITALIAN_APHLABET = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyzAÀBCDEÈÉFGHIÌÍÎJKLMNOÒÓPQRSTUÙÚVWXYZ"
