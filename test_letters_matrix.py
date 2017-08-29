@@ -9,8 +9,10 @@
 import nsNLP
 import argparse
 import codecs
+import matplotlib.pyplot as plt
 
 ITALIAN_APHLABET = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyzAÀBCDEÈÉFGHIÌÍÎJKLMNOÒÓPQRSTUÙÚVWXYZ"
+ITALIAN_APHLABET_LOWER = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyz"
 ITALIAN_PUNC = u".,;:'!?«»"
 
 # Main function
@@ -21,15 +23,41 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--file", type=str, help="Text file", required=True)
+    parser.add_argument("--uppercase", action='store_true', help="Keep uppercases", default=False)
+    parser.add_argument("--to-one", action='store_true', help="Put frequencies with the max to one", default=False)
     args = parser.parse_args()
 
     # Read text
     text = codecs.open(args.file, 'r', encoding='utf-8').read()
 
-    # 2-grams
-    grams = nsNLP.features.Letter2Grams(text, alphabet=ITALIAN_APHLABET, punc=ITALIAN_PUNC)
+    # Letter stats
+    grams = nsNLP.features.LetterStatistics(text, alphabet=ITALIAN_APHLABET, punc=ITALIAN_PUNC)
 
-    # Print 2-grams
-    print(grams.get_beginning_2grams(uppercase=False))
+    # Get statistics
+    grams_stats = dict()
+    print("generating grams")
+    grams_stats['grams'] = grams.get_2grams(uppercase=args.uppercase)
+    #grams_stats['first_grams'] = grams.get_beginning_2grams(uppercase=args.uppercase)
+    #grams_stats['end_grams'] = grams.get_ending_2grams(uppercase=args.uppercase)
+    #grams_stats['punctuations'] = grams.get_punctuation(to_one=args.to_one)
+
+    # Alphabet
+    if args.uppercase:
+        matrix_alphabet = ITALIAN_APHLABET
+    else:
+        matrix_alphabet = ITALIAN_APHLABET_LOWER
+    # end if
+
+    # Letters matrix
+    grams_matrix = nsNLP.features.LettersMatrix(features_mapping=grams_stats, letters=matrix_alphabet,
+                                                punctuations=ITALIAN_PUNC)
+
+    # Generate matrix
+    print("generating matrix")
+    m = grams_matrix(matrix_format='numpy')
+
+    # Show matrix
+    plt.imshow(m)
+    plt.show()
 
 # end if
