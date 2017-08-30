@@ -35,11 +35,10 @@ if __name__ == "__main__":
 
     # Get statistics
     grams_stats = dict()
-    print("generating grams")
-    grams_stats['grams'] = grams.get_2grams(uppercase=args.uppercase)
-    #grams_stats['first_grams'] = grams.get_beginning_2grams(uppercase=args.uppercase)
-    #grams_stats['end_grams'] = grams.get_ending_2grams(uppercase=args.uppercase)
-    #grams_stats['punctuations'] = grams.get_punctuation(to_one=args.to_one)
+    grams_stats['grams'] = grams.get_2grams(uppercase=args.uppercase, to_one=args.to_one)
+    grams_stats['first_grams'] = grams.get_beginning_2grams(uppercase=args.uppercase, to_one=args.to_one)
+    grams_stats['end_grams'] = grams.get_ending_2grams(uppercase=args.uppercase, to_one=args.to_one)
+    grams_stats['punctuations'] = grams.get_punctuation(to_one=args.to_one)
 
     # Alphabet
     if args.uppercase:
@@ -53,11 +52,10 @@ if __name__ == "__main__":
                                                 punctuations=ITALIAN_PUNC)
 
     # Generate matrix
-    print("generating matrix")
     m = grams_matrix(matrix_format='numpy')
 
     # Show matrix
-    plt.imshow(m)
+    plt.imshow(m, cmap='gray')
     plt.show()
 
 # end if
