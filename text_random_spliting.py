@@ -22,8 +22,9 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
-    parser.add_argument("--n-lines", type=int, help="Number of lines in output text fies", required=True)
-    parser.add_argument("--n-texts", type=int, help="Number of text files based on a multiplication factor (#lines * m)", required=True)
+    parser.add_argument("--n-max-lines", type=int, help="Max. number of lines in output text files", required=True)
+    parser.add_argument("--n-min-lines", type=int, help="Min. number of lines in output text files", required=True)
+    parser.add_argument("--n-texts", type=float, help="Number of text files based on a multiplication factor (#lines * m)", required=True)
     parser.add_argument("--output", type=str, help="Output directory", required=True)
     args = parser.parse_args()
 
@@ -54,38 +55,42 @@ if __name__ == "__main__":
             author_texts = author_texts.replace(u"\n\n", u"\n")
         # end for
 
-        # For each text
-        for text_sample in author.get_texts():
-            # Get text
-            text = codecs.open(text_sample.get_path(), 'r', encoding='utf-8').read()
+        # Get all lines
+        text_lines = author_texts.split(u"\n")
 
-            # Log
-            print(u"Parsing file {}".format(text_sample.get_path()))
+        # Number of lines
+        n_lines = len(text_lines)
+        print(u"Author {} has {} lines".format(author.get_name(), n_lines))
 
-            # For each line
-            index = 1
-            for line in text.split(u'\n'):
-                if len(line) > 1:
-                    # Open a file
-                    if index % args.n_lines == 1:
-                        random_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-                        file_path = os.path.join(args.output, random_name + u".txt")
-                        print(u"Writing file {}".format(file_path))
-                        f = codecs.open(file_path, 'w', encoding='utf-8')
-                        text_informations[random_name] = author.get_name()
-                        author_informations[author.get_name()].append(random_name)
-                    # end if
+        # Number of files
+        n_texts = float(n_lines * args.n_texts)
 
-                    # Write line
-                    f.write(line + u'\n')
+        # Generate each file
+        for i in range(n_texts):
+            file_text = u""
 
-                    # Close the file
-                    if index % args.n_lines == 0:
-                        f.close()
-                    # end if
-                    index += 1
-                # end if
+            # Random number of lines
+            n_random_lines = random.randint(args.n_min_lines, args.n_max_lines)
+
+            # Select lines
+            for j in range(n_random_lines):
+                # Select line
+                n_random_pos = random.randint(0, n_lines)
+
+                # Add
+                file_text += text_lines[n_random_pos]
             # end for
+
+            # Filename
+            file_name = author.get_name() + u"_" + unicode(i)
+
+            # Write the file
+            file_path = os.path.join(args.output, file_name + u".txt")
+            codecs.open(file_path, 'w', encoding='utf-8').write(file_text)
+
+            # Add info
+            author_informations[author.get_name()].append(file_name)
+            text_informations[file_name] = author.get_name()
         # end for
     # end for
 
