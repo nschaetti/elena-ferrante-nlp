@@ -41,7 +41,8 @@ if __name__ == "__main__":
     # Output
     parser.add_argument("--output", type=str, help="Output image", required=True)
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
-    parser.add_argument("--csv", type=str, help="Output CSV file with weights", default="")
+    parser.add_argument("--doc-csv", type=str, help="Output CSV file with weights between docs", default="")
+    parser.add_argument("--author-csv", type=str, help="Output CSV file with weights with authors node", default="")
 
     # Other
     parser.add_argument("--uppercase", action='store_true', help="Keep uppercases", default=False)
@@ -136,11 +137,23 @@ if __name__ == "__main__":
     logger.info(u"Author2vec shape : {}".format(document2vec.shape))
 
     # Output CSV files
-    if args.csv != "":
-        # Open the file
-        with codecs.open(args.csv, 'w', encoding='utf-8') as f:
+    if args.doc_csv != "" and args.author_csv != "":
+        # Open the node file
+        with codecs.open(args.author_csv) as f:
             # Header
-            f.write(u"Source,Target,Weight")
+            f.write(u"Id,Label")
+
+            # For each doc
+            for document in iqla.get_authors():
+                document_index = document2index[document.get_path()]
+                f.write(u"{},{}".format(document_index, document.get_author().get_name()))
+            # end for
+        # end with
+
+        # Open the edge file
+        with codecs.open(args.doc_csv, 'w', encoding='utf-8') as f:
+            # Header
+            f.write(u"Source,Target,Weight,Author")
 
             # Compute distance between each documents
             for document1 in iqla.get_texts():
@@ -151,7 +164,7 @@ if __name__ == "__main__":
                         document1_embedding = document2vec[document1_index]
                         document2_embedding = document2vec[document2_index]
                         distance = cosine_similarity(document1_embedding, document2_embedding)
-                        f.write(u"{},{},{}".format(document1.get_author().get_name(), document2.get_author().get_name(), distance))
+                        f.write(u"{},{},{}".format(document1_index, document2_index, distance))
                     # end if
                 # end for
             # end for
@@ -160,7 +173,7 @@ if __name__ == "__main__":
 
     # Reduce with t-SNE
     model = TSNE(n_components=2, random_state=0)
-    reduced_matrix = model.fit_transform(author2vec.T)
+    reduced_matrix = model.fit_transform(document2vec.T)
 
     # Author embeddings matrix's size
     logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
@@ -173,10 +186,11 @@ if __name__ == "__main__":
     min_y = np.amin(reduced_matrix, axis=0)[1]
     plt.xlim((min_x * 1.2, max_x * 1.2))
     plt.ylim((min_y * 1.2, max_y * 1.2))
-    for author in iqla.get_authors():
-        author_index = authors_index[author.get_name()]
-        plt.scatter(reduced_matrix[author_index, 0], reduced_matrix[author_index, 1], 0.5)
-        plt.text(reduced_matrix[author_index, 0], reduced_matrix[author_index, 1], author.get_name(), fontsize=2.5)
+    for document in iqla.get_texts():
+        document_index = document2index[document.get_path()]
+        plt.scatter(reduced_matrix[document_index, 0], reduced_matrix[document_index, 1], 0.5)
+        plt.text(reduced_matrix[document_index, 0], reduced_matrix[document_index], document.get_author().get_name(),
+                 fontsize=2.5)
     # end for
 
     # Save image
