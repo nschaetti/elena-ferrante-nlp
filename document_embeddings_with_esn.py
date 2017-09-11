@@ -11,6 +11,7 @@ import argparse
 import corpus as cp
 import pickle
 import logging
+import codecs
 import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
@@ -24,7 +25,7 @@ ITALIAN_PUNC = u".,;:'!?«»"
 if __name__ == "__main__":
 
     # Argument parser
-    parser = argparse.ArgumentParser(description="ElenaFerrante - Author clustering with document embeddings with ESN")
+    parser = argparse.ArgumentParser(description="ElenaFerrante - Author clustering with author embeddings with ESN")
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
@@ -90,15 +91,12 @@ if __name__ == "__main__":
         converter = nsNLP.OneHotConverter(lang=args.lang, voc_size=args.voc_size, word2vec=word2vec)
     # end if
 
-    # Author names
-    author_names = list()
-    for author in iqla.get_authors():
-        author_names.append(author_names)
-    # end for
+    # Document's IDs
+    n_docs = iqla.get_n_texts()
 
     # Create Echo Word Classifier
     classifier = nsNLP.classifiers.EchoWordClassifier(
-        classes=author_names,
+        classes=range(n_docs),
         size=args.reservoir_size,
         input_scaling=args.input_scaling,
         leak_rate=args.leak_rate,
@@ -109,19 +107,24 @@ if __name__ == "__main__":
         use_sparse_matrix=args.sparse
     )
 
-    # Train each authors
-    authors_index = dict()
-    index_to_author = dict()
+    # Train each documents
+    author2index = dict()
+    index2author = dict()
+    document2index = dict()
+    index2document = dict()
     index = 0
-    for author in iqla.get_authors():
-        authors_index[author.get_name()] = index
-        index_to_author[index] = author.get_name()
-        # For each author text
-        for author_text in author.get_texts():
-            # Train
-            logger.info(u"Adding document {} as {}".format(author_text.get_path(), author.get_name()))
-            classifier.train(author_text.get_text(), author.get_name())
-        # end for
+    for document in iqla.get_texts():
+        # Conversions
+        author2index[document.get_author().get_name()].append(index)
+        index2author[index] = document.get_author().get_name()
+        document2index[document.get_path()] = index
+        index2document[index] = document.get_path()
+
+        # Train
+        logger.info(u"Adding document {} as {}".format(document.get_path(), index))
+        classifier.train(document.get_text(), index)
+
+        # Next index
         index += 1
     # end for
 
@@ -129,24 +132,30 @@ if __name__ == "__main__":
     classifier.finalize(verbose=args.verbose)
 
     # Get author embeddings
-    author2vec = classifier.get_embeddings()
-    logger.info(u"Author2vec shape : {}".format(author2vec.shape))
+    document2vec = classifier.get_embeddings()
+    logger.info(u"Author2vec shape : {}".format(document2vec.shape))
 
     # Output CSV files
     if args.csv != "":
-        for author1 in iqla.get_authors():
-            for author2 in iqla.get_authors():
-                if author1 != author2:
-                    author_embedding1 = author2vec[authors_index]
-                    distance = cosine_similarity(document_embedding1, document_embedding2)
-                # end if
+        # Open the file
+        with codecs.open(args.csv, 'w', encoding='utf-8') as f:
+            # Header
+            f.write(u"Source,Target,Weight")
+
+            # Compute distance between each documents
+            for document1 in iqla.get_texts():
+                for document2 in iqla.get_texts():
+                    if document1 != document2:
+                        document1_index = document2index[document1.get_path()]
+                        document2_index = document2index[document2.get_path()]
+                        document1_embedding = document2vec[document1_index]
+                        document2_embedding = document2vec[document2_index]
+                        distance = cosine_similarity(document1_embedding, document2_embedding)
+                        f.write(u"{},{},{}".format(document1.get_author().get_name(), document2.get_author().get_name(), distance))
+                    # end if
+                # end for
             # end for
-        # end for
-        for document_index in np.arange(0, n_total_docs, args.n_authors):
-            similar_doc = get_similar_documents(document_index, document_embeddings,
-                                                distance_measure=distance_measure)
-            logger.info(u"Documents similar to {} : {}".format(document_index, similar_doc[:10]))
-        # end for
+        # end with
     # end if
 
     # Reduce with t-SNE
