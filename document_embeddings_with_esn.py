@@ -43,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
     parser.add_argument("--doc-csv", type=str, help="Output CSV file with weights between docs", default="")
     parser.add_argument("--author-csv", type=str, help="Output CSV file with weights with authors node", default="")
+    parser.add_argument("--links-csv", type=str, help="Output CSV file with weights with document links and weights", default="")
 
     # Other
     parser.add_argument("--uppercase", action='store_true', help="Keep uppercases", default=False)
@@ -136,8 +137,43 @@ if __name__ == "__main__":
     document2vec = classifier.get_embeddings()
     logger.info(u"Author2vec shape : {}".format(document2vec.shape))
 
-    # Output CSV files
-    if args.doc_csv != "" and args.author_csv != "":
+    # Similarity matrix
+    similarity_matrix = np.zeros((iqla.get_n_authors(), iqla.get_n_authors()))
+
+    # Compute similarity matrix
+    for document1 in iqla.get_texts():
+        for document2 in iqla.get_texts():
+            if document1 != document2:
+                document1_index = document2index[document1.get_path()]
+                document2_index = document2index[document2.get_path()]
+                document1_embedding = document2vec[document1_index]
+                document2_embedding = document2vec[document2_index]
+                distance = cosine_similarity(document1_embedding, document2_embedding)
+                similarity_matrix[document1_index, document2_index] = distance
+            # end if
+        # end for
+    # end for
+
+    # Links matrix
+    links_matrix = np.zeros((iqla.get_n_texts(), iqla.get_n_texts()))
+
+    # Compute links matrix
+    for index in range(iqla.get_n_texts()):
+        # Get the row
+        document_row = similarity_matrix[index, :]
+
+        # Remove self relation
+        document_row_cleaned = np.delete(document_row, index)
+
+        # Threshold
+        distance_threshold = 1.65 * np.std(document_row_cleaned)
+
+        # Make
+        links_matrix[index, document_row >= distance_threshold] = 1.0
+    # end for
+
+    # Output author CSV files
+    if args.doc_csv != "":
         # Open the node file
         with codecs.open(args.author_csv) as f:
             # Header
@@ -149,7 +185,10 @@ if __name__ == "__main__":
                 f.write(u"{},{}".format(document_index, document.get_author().get_name()))
             # end for
         # end with
+    # end if
 
+    # Output document weights CSV files
+    if args.author_csv != "":
         # Open the edge file
         with codecs.open(args.doc_csv, 'w', encoding='utf-8') as f:
             # Header
@@ -165,6 +204,32 @@ if __name__ == "__main__":
                         document2_embedding = document2vec[document2_index]
                         distance = cosine_similarity(document1_embedding, document2_embedding)
                         f.write(u"{},{},{}".format(document1_index, document2_index, distance))
+                    # end if
+                # end for
+            # end for
+        # end with
+    # end if
+
+    # Output CSV file with links and weights
+    if args.links_csv != "":
+        # Open the file
+        with codecs.open(args.links_csv, 'w', encoding='utf-8') as f:
+            # Header
+            f.write(u"Source,Target,Weight\n")
+
+            # Compute distance between each authors
+            for document1 in iqla.get_n_texts():
+                for document2 in iqla.get_n_texts():
+                    if document1 != document2:
+                        document1_index = document2index[document1.get_path()]
+                        document2_index = document2index[document2.get_path()]
+                        document1_embedding = document2vec[document1_index]
+                        document2_embedding = document2vec[document2_index]
+                        distance = similarity_matrix[document1_embedding, document2_embedding]
+                        link = links_matrix[document1_embedding, document2_embedding]
+                        if link == 1.0:
+                            f.write(u"{},{},{}\n".format(document1_index, document2_index, distance))
+                        # end if
                     # end if
                 # end for
             # end for
