@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, help="Output image", required=True)
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
     parser.add_argument("--csv", type=str, help="Output CSV file with weights", default="")
+    parser.add_argument("--links-csv", type=str, help="Output CSV file with links and weights", default="")
 
     # Other
     parser.add_argument("--uppercase", action='store_true', help="Keep uppercases", default=False)
@@ -133,12 +134,45 @@ if __name__ == "__main__":
     author2vec = classifier.get_embeddings()
     logger.info(u"Author2vec shape : {}".format(author2vec.shape))
 
-    # Output CSV files
+    # Similarity matrix
+    similarity_matrix = np.zeros((iqla.get_n_authors(), iqla.get_n_authors()))
+
+    # Compute similarity matrix
+    for author1 in iqla.get_authors():
+        for author2 in iqla.get_authors():
+            if author1 != author2:
+                author_embedding1 = author2vec[authors_index]
+                author_embedding2 = author2vec[authors_index]
+                distance = cosine_similarity(author_embedding1, author_embedding2)
+                similarity_matrix[author_embedding1, author_embedding2] = distance
+            # end if
+        # end for
+    # end for
+
+    # Links matrix
+    links_matrix = np.zeros((iqla.get_n_authors(), iqla.get_n_authors()))
+
+    # Compute links matrix
+    for index in range(iqla.get_n_authors()):
+        # Get the row
+        author_row = similarity_matrix[index, :]
+
+        # Remove self relation
+        author_row_cleaned = np.delete(author_row, index)
+
+        # Threshold
+        distance_threshold = 1.65 * np.std(author_row_cleaned)
+
+        # Make
+        links_matrix[index, author_row >= distance_threshold] = 1.0
+    # end for
+
+    # Output CSV file with all weights
     if args.csv != "":
         # Open the file
         with codecs.open(args.csv, 'w', encoding='utf-8') as f:
             # Header
-            f.write(u"Source,Target,Weight")
+            f.write(u"Source,Target,Weight\n")
 
             # Compute distance between each authors
             for author1 in iqla.get_authors():
@@ -146,8 +180,32 @@ if __name__ == "__main__":
                     if author1 != author2:
                         author_embedding1 = author2vec[authors_index]
                         author_embedding2 = author2vec[authors_index]
-                        distance = cosine_similarity(author_embedding1, author_embedding2)
-                        f.write(u"{},{},{}".format(author1.get_name(), author2.get_name(), distance))
+                        distance = similarity_matrix[author_embedding1, author_embedding2]
+                        f.write(u"{},{},{}\n".format(author1.get_name(), author2.get_name(), distance))
+                    # end if
+                # end for
+            # end for
+        # end with
+    # end if
+
+    # Output CSV file with links and weights
+    if args.links_csv != "":
+        # Open the file
+        with codecs.open(args.links_csv, 'w', encoding='utf-8') as f:
+            # Header
+            f.write(u"Source,Target,Weight\n")
+
+            # Compute distance between each authors
+            for author1 in iqla.get_authors():
+                for author2 in iqla.get_authors():
+                    if author1 != author2:
+                        author_embedding1 = author2vec[authors_index]
+                        author_embedding2 = author2vec[authors_index]
+                        distance = similarity_matrix[author_embedding1, author_embedding2]
+                        link = links_matrix[author_embedding1, author_embedding2]
+                        if link == 1.0:
+                            f.write(u"{},{},{}\n".format(author1.get_name(), author2.get_name(), distance))
+                        # end if
                     # end if
                 # end for
             # end for
