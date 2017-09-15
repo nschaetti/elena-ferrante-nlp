@@ -17,9 +17,6 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
-ITALIAN_APHLABET = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyzAÀBCDEÈÉFGHIÌÍÎJKLMNOÒÓPQRSTUÙÚVWXYZ"
-ITALIAN_APHLABET_LOWER = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyz"
-ITALIAN_PUNC = u".,;:'!?«»"
 
 # Main function
 if __name__ == "__main__":
@@ -41,9 +38,10 @@ if __name__ == "__main__":
     # Output
     parser.add_argument("--output", type=str, help="Output image", required=True)
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
-    parser.add_argument("--doc-csv", type=str, help="Output CSV file with weights between docs", default="")
-    parser.add_argument("--author-csv", type=str, help="Output CSV file with weights with authors node", default="")
+    parser.add_argument("--node-csv", type=str, help="Output CSV file with weights between docs", default="")
+    parser.add_argument("--weights-csv", type=str, help="Output CSV file with weights with authors node", default="")
     parser.add_argument("--links-csv", type=str, help="Output CSV file with weights with document links and weights", default="")
+    parser.add_argument("--ordered-list", type=str, help="Output CSV file of ordered distances", default="")
 
     # Other
     parser.add_argument("--uppercase", action='store_true', help="Keep uppercases", default=False)
@@ -102,6 +100,9 @@ if __name__ == "__main__":
         use_sparse_matrix=args.sparse
     )
 
+    # Tokenizer
+    tokenizer = nsNLP.tokenization.NLTKTokenizer(lang='italian')
+
     # Train each documents
     author2index = dict()
     index2author = dict()
@@ -117,7 +118,7 @@ if __name__ == "__main__":
 
         # Train
         logger.info(u"Adding document {} as {}".format(document.get_path(), index))
-        classifier.train(document.get_text(), index)
+        classifier.train(tokenizer(document.get_text()), index)
 
         # Next index
         index += 1
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 
     # Get author embeddings
     document2vec = classifier.get_embeddings()
-    logger.info(u"Author2vec shape : {}".format(document2vec.shape))
+    logger.info(u"Author2vec shape : {}x{}".format(len(document2vec.keys()), document2vec[0].shape[0]))
 
     # Similarity matrix
     similarity_matrix = np.zeros((iqla.get_n_authors(), iqla.get_n_authors()))
@@ -167,26 +168,26 @@ if __name__ == "__main__":
     # end for
 
     # Output author CSV files
-    if args.doc_csv != "":
+    if args.node_csv != "":
         # Open the node file
-        with codecs.open(args.author_csv) as f:
+        with codecs.open(args.node_csv) as f:
             # Header
-            f.write(u"Id,Label")
+            f.write(u"Id,Label\n")
 
             # For each doc
             for document in iqla.get_authors():
                 document_index = document2index[document.get_path()]
-                f.write(u"{},{}".format(document_index, document.get_author().get_name()))
+                f.write(u"{},{}\n".format(document_index, document.get_author().get_name()))
             # end for
         # end with
     # end if
 
     # Output document weights CSV files
-    if args.author_csv != "":
+    if args.weights_csv != "":
         # Open the edge file
-        with codecs.open(args.doc_csv, 'w', encoding='utf-8') as f:
+        with codecs.open(args.weights_csv, 'w', encoding='utf-8') as f:
             # Header
-            f.write(u"Source,Target,Weight,Author")
+            f.write(u"Source,Target,Weight\n")
 
             # Compute distance between each documents
             for document1 in iqla.get_texts():
@@ -194,10 +195,8 @@ if __name__ == "__main__":
                     if document1 != document2:
                         document1_index = document2index[document1.get_path()]
                         document2_index = document2index[document2.get_path()]
-                        document1_embedding = document2vec[document1_index]
-                        document2_embedding = document2vec[document2_index]
-                        distance = cosine_similarity(document1_embedding, document2_embedding)
-                        f.write(u"{},{},{}".format(document1_index, document2_index, distance))
+                        similarity = similarity_matrix[document1_index, document2_index]
+                        f.write(u"{},{},{}".format(document1_index, document2_index, similarity))
                     # end if
                 # end for
             # end for
@@ -217,12 +216,10 @@ if __name__ == "__main__":
                     if document1 != document2:
                         document1_index = document2index[document1.get_path()]
                         document2_index = document2index[document2.get_path()]
-                        document1_embedding = document2vec[document1_index]
-                        document2_embedding = document2vec[document2_index]
-                        distance = similarity_matrix[document1_embedding, document2_embedding]
-                        link = links_matrix[document1_embedding, document2_embedding]
+                        similarity = similarity_matrix[document1_index, document2_index]
+                        link = links_matrix[document1_index, document2_index]
                         if link == 1.0:
-                            f.write(u"{},{},{}\n".format(document1_index, document2_index, distance))
+                            f.write(u"{},{},{}\n".format(document1_index, document2_index, similarity))
                         # end if
                     # end if
                 # end for
@@ -230,29 +227,10 @@ if __name__ == "__main__":
         # end with
     # end if
 
-    # Reduce with t-SNE
-    model = TSNE(n_components=2, random_state=0)
-    reduced_matrix = model.fit_transform(document2vec.T)
+    # Save TSNE
+    nsNLP.visualisation.EmbeddingsVisualisation.tsne(document2vec, args.fig_size, args.output, index2author)
 
-    # Author embeddings matrix's size
-    logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
-
-    # Show t-SNE
-    plt.figure(figsize=(args.fig_size*0.003, args.fig_size*0.003), dpi=300)
-    max_x = np.amax(reduced_matrix, axis=0)[0]
-    max_y = np.amax(reduced_matrix, axis=0)[1]
-    min_x = np.amin(reduced_matrix, axis=0)[0]
-    min_y = np.amin(reduced_matrix, axis=0)[1]
-    plt.xlim((min_x * 1.2, max_x * 1.2))
-    plt.ylim((min_y * 1.2, max_y * 1.2))
-    for document in iqla.get_texts():
-        document_index = document2index[document.get_path()]
-        plt.scatter(reduced_matrix[document_index, 0], reduced_matrix[document_index, 1], 0.5)
-        plt.text(reduced_matrix[document_index, 0], reduced_matrix[document_index], document.get_author().get_name(),
-                 fontsize=2.5)
-    # end for
-
-    # Save image
-    plt.savefig(args.output)
+    # Save similarities ordered by distance
+    nsNLP.visualisation.ordered_distances_csv(args.ordered_list, document2vec, index2author)
 
 # end if
