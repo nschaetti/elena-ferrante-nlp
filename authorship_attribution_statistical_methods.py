@@ -55,8 +55,9 @@ if __name__ == "__main__":
         # For each samples
         for index, sample in enumerate(train_set):
             #print u"\rLearning {}/{}".format(index+1, len(train_set)),
-            # Bag of words
-            bow = nsNLP.features.BagOfWords()
+            # Bag of bigrams
+            #bow = nsNLP.features.BagOfWords()
+            bow = nsNLP.features.BagOf2Grams()
 
             # Train
             classifier.train(bow(tokenizer(sample.x())), sample.y())
@@ -70,8 +71,8 @@ if __name__ == "__main__":
         count = 0.0
         successes = 0.0
         for index, sample in enumerate(test_set):
-            # Bag of words
-            bow = nsNLP.features.BagOfWords()
+            # Bag of bigrams
+            bow = nsNLP.features.BagOf2Grams()
 
             # Predict
             predicted, probs = classifier(bow(tokenizer(sample.x())))
@@ -93,6 +94,10 @@ if __name__ == "__main__":
         # Add
         success_rates = np.append(success_rates, [success_rate])
 
+        # Reset
+        classifier.reset()
+
+        # Next fold
         k += 1
     # end for
 
