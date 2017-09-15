@@ -17,10 +17,6 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
-ITALIAN_APHLABET = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyzAÀBCDEÈÉFGHIÌÍÎJKLMNOÒÓPQRSTUÙÚVWXYZ"
-ITALIAN_APHLABET_LOWER = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyz"
-ITALIAN_PUNC = u".,;:'!?«»"
-
 # Main function
 if __name__ == "__main__":
 
@@ -58,19 +54,12 @@ if __name__ == "__main__":
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
     args = parser.parse_args()
 
-    # Alphabet
-    if args.uppercase:
-        matrix_alphabet = ITALIAN_APHLABET
-    else:
-        matrix_alphabet = ITALIAN_APHLABET_LOWER
-    # end if
-
     # Load dataset
     iqla = cp.IQLACorpus(dataset_path=args.dataset)
 
     # Init logging
     logging.basicConfig(level=args.log_level)
-    logger = logging.getLogger(name="ElenaFerrante")
+    logger = logging.getLogger(name=u"ElenaFerrante")
 
     # PCA model
     pca_model = None
@@ -80,16 +69,17 @@ if __name__ == "__main__":
 
     # Choose a text to symbol converter.
     if args.converter == "pos":
-        converter = nsNLP.PosConverter(resize=args.in_components, pca_model=pca_model)
+        converter = nsNLP.esn_models.converters.PosConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "tag":
-        converter = nsNLP.TagConverter(resize=args.in_components, pca_model=pca_model)
+        converter = nsNLP.esn_models.converters.TagConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "fw":
-        converter = nsNLP.FuncWordConverter(resize=args.in_components, pca_model=pca_model)
+        converter = nsNLP.esn_models.converters.FuncWordConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "wv":
-        converter = nsNLP.WVConverter(resize=args.in_components, pca_model=pca_model)
+        converter = nsNLP.esn_models.converters.WVConverter(resize=args.in_components, pca_model=pca_model)
     else:
-        word2vec = nsNLP.Word2Vec(dim=args.voc_size, mapper='one-hot')
-        converter = nsNLP.OneHotConverter(lang=args.lang, voc_size=args.voc_size, word2vec=word2vec)
+        word2vec = nsNLP.esn_models.converters.Word2Vec(dim=args.voc_size, mapper='one-hot')
+        converter = nsNLP.esn_models.converters.OneHotConverter(lang=args.lang, voc_size=args.voc_size,
+                                                                word2vec=word2vec)
     # end if
 
     # Author names
@@ -99,7 +89,7 @@ if __name__ == "__main__":
     # end for
 
     # Create Echo Word Classifier
-    classifier = nsNLP.classifiers.EchoWordClassifier(
+    classifier = nsNLP.esn_models.ESNTextClassifier(
         classes=author_names,
         size=args.reservoir_size,
         input_scaling=args.input_scaling,
