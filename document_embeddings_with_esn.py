@@ -11,11 +11,6 @@ import argparse
 import corpus as cp
 import pickle
 import logging
-import codecs
-import numpy as np
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 # Main function
@@ -78,6 +73,7 @@ if __name__ == "__main__":
     elif args.converter == "fw":
         converter = nsNLP.esn_models.converters.FuncWordConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "wv":
+        word2vec = nsNLP.embeddings.SpacyWord2Vec()
         converter = nsNLP.esn_models.converters.WVConverter(resize=args.in_components, pca_model=pca_model)
     else:
         word2vec = nsNLP.esn_models.converters.Word2Vec(dim=args.voc_size, mapper='one-hot')
@@ -112,7 +108,12 @@ if __name__ == "__main__":
     index = 0
     for document in iqla.get_texts():
         # Conversions
-        author2index[document.get_author().get_name()].append(index)
+        try:
+            author2index[document.get_author().get_name()].append(index)
+        except KeyError:
+            author2index[document.get_author().get_name()] = list()
+            author2index[document.get_author().get_name()].append(index)
+        # end try
         index2author[index] = document.get_author().get_name()
         document2index[document.get_path()] = index
         index2document[index] = document.get_path()
