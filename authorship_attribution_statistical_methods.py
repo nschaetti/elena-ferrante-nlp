@@ -10,7 +10,6 @@ import nsNLP
 import argparse
 import corpus as cp
 import numpy as np
-import matplotlib.pyplot as plt
 
 ITALIAN_APHLABET = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyzAÀBCDEÈÉFGHIÌÍÎJKLMNOÒÓPQRSTUÙÚVWXYZ"
 ITALIAN_APHLABET_LOWER = u"aàbcdeèéfghiìíîjklmnoòópqrstuùúvwxyz"
@@ -31,13 +30,6 @@ if __name__ == "__main__":
     parser.add_argument("--smoothing-param", type=float, help="Smoothing parameter", default=-1)
     args = parser.parse_args()
 
-    # Alphabet
-    if args.uppercase:
-        matrix_alphabet = ITALIAN_APHLABET
-    else:
-        matrix_alphabet = ITALIAN_APHLABET_LOWER
-    # end if
-
     # Load dataset
     iqla = cp.IQLACorpus(dataset_path=args.dataset)
 
@@ -52,6 +44,9 @@ if __name__ == "__main__":
     # Success rates
     success_rates = np.array([])
 
+    # Tokenizer
+    tokenizer = nsNLP.tokenization.NLTKTokenizer(lang='italian')
+
     # Cross validation
     k = 0
     for train_set, test_set in cross_validation:
@@ -59,14 +54,14 @@ if __name__ == "__main__":
 
         # For each samples
         for index, sample in enumerate(train_set):
-            print u"\rLearning {}/{}".format(index+1, len(train_set)),
+            #print u"\rLearning {}/{}".format(index+1, len(train_set)),
             # Bag of words
-            bow = nsNLP.features.BagOfWords('en')
+            bow = nsNLP.features.BagOfWords()
 
             # Train
-            classifier.train(bow(sample.x()), sample.y())
+            classifier.train(bow(tokenizer(sample.x())), sample.y())
         # end for
-        print(u"")
+        #print(u"")
 
         # Finalize
         classifier.finalize()
@@ -76,10 +71,10 @@ if __name__ == "__main__":
         successes = 0.0
         for index, sample in enumerate(test_set):
             # Bag of words
-            bow = nsNLP.features.BagOfWords('en')
+            bow = nsNLP.features.BagOfWords()
 
             # Predict
-            predicted, _ = classifier(bow(sample.x()))
+            predicted, probs = classifier(bow(tokenizer(sample.x())))
 
             # Test
             if predicted == sample.y():
@@ -93,7 +88,7 @@ if __name__ == "__main__":
         success_rate = successes / count
 
         # Show success rate
-        print(u"Succeess rate : {}".format(success_rate))
+        print(u"\tSucceess rate : {}".format(success_rate))
 
         # Add
         success_rates = np.append(success_rates, [success_rate])
