@@ -108,6 +108,7 @@ if __name__ == "__main__":
     index2author = dict()
     document2index = dict()
     index2document = dict()
+    document2author = dict()
     index = 0
     for document in iqla.get_texts():
         # Conversions
@@ -115,6 +116,7 @@ if __name__ == "__main__":
         index2author[index] = document.get_author().get_name()
         document2index[document.get_path()] = index
         index2document[index] = document.get_path()
+        document2author[document.get_path()] = document.get_author().get_name()
 
         # Train
         logger.info(u"Adding document {} as {}".format(document.get_path(), index))
@@ -131,100 +133,23 @@ if __name__ == "__main__":
     document2vec = classifier.get_embeddings()
     logger.info(u"Author2vec shape : {}x{}".format(len(document2vec.keys()), document2vec[0].shape[0]))
 
-    # Similarity matrix
-    similarity_matrix = np.zeros((iqla.get_n_authors(), iqla.get_n_authors()))
+    # Similarity matrix & links matrix
+    similarity_matrix = nsNLP.clustering.tools.DistanceMeasures.similarity_matrix(document2vec)
+    links_matrix = nsNLP.clustering.tools.DistanceMeasures.link_matrix(similarity_matrix)
 
-    # Compute similarity matrix
-    for document1 in iqla.get_texts():
-        for document2 in iqla.get_texts():
-            if document1 != document2:
-                document1_index = document2index[document1.get_path()]
-                document2_index = document2index[document2.get_path()]
-                document1_embedding = document2vec[document1_index]
-                document2_embedding = document2vec[document2_index]
-                distance = cosine_similarity(document1_embedding, document2_embedding)
-                similarity_matrix[document1_index, document2_index] = distance
-            # end if
-        # end for
-    # end for
-
-    # Links matrix
-    links_matrix = np.zeros((iqla.get_n_texts(), iqla.get_n_texts()))
-
-    # Compute links matrix
-    for index in range(iqla.get_n_texts()):
-        # Get the row
-        document_row = similarity_matrix[index, :]
-
-        # Remove self relation
-        document_row_cleaned = np.delete(document_row, index)
-
-        # Threshold
-        average_similarity = np.average(document_row_cleaned)
-        distance_threshold = 1.65 * np.std(document_row_cleaned)
-
-        # Make
-        links_matrix[index, document_row - average_similarity >= distance_threshold] = 1.0
-    # end for
-
-    # Output author CSV files
+    # Output node CSV files
     if args.node_csv != "":
-        # Open the node file
-        with codecs.open(args.node_csv) as f:
-            # Header
-            f.write(u"Id,Label\n")
-
-            # For each doc
-            for document in iqla.get_authors():
-                document_index = document2index[document.get_path()]
-                f.write(u"{},{}\n".format(document_index, document.get_author().get_name()))
-            # end for
-        # end with
+        nsNLP.visualisation.EmbeddingsVisualisation.node_csv(args.node_csv, range(n_docs), index2author)
     # end if
 
     # Output document weights CSV files
     if args.weights_csv != "":
-        # Open the edge file
-        with codecs.open(args.weights_csv, 'w', encoding='utf-8') as f:
-            # Header
-            f.write(u"Source,Target,Weight\n")
-
-            # Compute distance between each documents
-            for document1 in iqla.get_texts():
-                for document2 in iqla.get_texts():
-                    if document1 != document2:
-                        document1_index = document2index[document1.get_path()]
-                        document2_index = document2index[document2.get_path()]
-                        similarity = similarity_matrix[document1_index, document2_index]
-                        f.write(u"{},{},{}".format(document1_index, document2_index, similarity))
-                    # end if
-                # end for
-            # end for
-        # end with
+        nsNLP.visualisation.EmbeddingsVisualisation.weights_csv(args.weights_csv, similarity_matrix)
     # end if
 
     # Output CSV file with links and weights
     if args.links_csv != "":
-        # Open the file
-        with codecs.open(args.links_csv, 'w', encoding='utf-8') as f:
-            # Header
-            f.write(u"Source,Target,Weight\n")
-
-            # Compute distance between each authors
-            for document1 in iqla.get_n_texts():
-                for document2 in iqla.get_n_texts():
-                    if document1 != document2:
-                        document1_index = document2index[document1.get_path()]
-                        document2_index = document2index[document2.get_path()]
-                        similarity = similarity_matrix[document1_index, document2_index]
-                        link = links_matrix[document1_index, document2_index]
-                        if link == 1.0:
-                            f.write(u"{},{},{}\n".format(document1_index, document2_index, similarity))
-                        # end if
-                    # end if
-                # end for
-            # end for
-        # end with
+        nsNLP.visualisation.EmbeddingsVisualisation.weights_csv(args.weights_csv, similarity_matrix, links_matrix)
     # end if
 
     # Save TSNE
