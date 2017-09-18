@@ -73,11 +73,10 @@ if __name__ == "__main__":
     elif args.converter == "fw":
         converter = nsNLP.esn_models.converters.FuncWordConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "wv":
-        word2vec = nsNLP.embeddings.SpacyWord2Vec()
+        word2vec = nsNLP.embeddings.SpacyWord2Vec(lang='en')
         converter = nsNLP.esn_models.converters.WVConverter(resize=args.in_components, pca_model=pca_model)
     else:
-        word2vec = nsNLP.esn_models.converters.Word2Vec(dim=args.voc_size, mapper='one-hot')
-        converter = nsNLP.esn_models.converters.OneHotConverter(lang=args.lang, voc_size=args.voc_size, word2vec=word2vec)
+        converter = nsNLP.esn_models.converters.OneHotConverter(voc_size=args.voc_size)
     # end if
 
     # Document's IDs
@@ -132,7 +131,7 @@ if __name__ == "__main__":
 
     # Get author embeddings
     document2vec = classifier.get_embeddings()
-    logger.info(u"Author2vec shape : {}x{}".format(len(document2vec.keys()), document2vec[0].shape[0]))
+    logger.info(u"Author2Vec shape : {}x{}".format(len(document2vec.keys()), document2vec[0].shape[0]))
 
     # Similarity matrix & links matrix
     similarity_matrix = nsNLP.clustering.tools.DistanceMeasures.similarity_matrix(document2vec)
@@ -157,6 +156,6 @@ if __name__ == "__main__":
     nsNLP.visualisation.EmbeddingsVisualisation.tsne(document2vec, args.fig_size, args.output, index2author)
 
     # Save similarities ordered by distance
-    nsNLP.visualisation.ordered_distances_csv(args.ordered_list, document2vec, index2author)
+    nsNLP.visualisation.EmbeddingsVisualisation.ordered_distances_csv(args.ordered_list, document2vec, index2author)
 
 # end if
