@@ -42,7 +42,6 @@ if __name__ == "__main__":
     parser.add_argument("--uppercase", action='store_true', help="Keep uppercases", default=False)
     parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
     parser.add_argument("--voc-size", type=int, help="Vocabulary size (in case of one-hot vector input)", default=5000)
-    parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
 
     # Converters
     parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv)", default='pos')
@@ -92,19 +91,21 @@ if __name__ == "__main__":
         converter=converter,
         spectral_radius=args.spectral_radius,
         w_sparsity=args.w_sparsity,
-        use_sparse_matrix=args.sparse
+        use_sparse_matrix=True
     )
 
     # Tokenizer
     tokenizer = nsNLP.tokenization.NLTKTokenizer(lang='italian')
 
-    # Train each documents
+    # Documents and indexes information
     author2index = dict()
     index2author = dict()
     document2index = dict()
     index2document = dict()
     document2author = dict()
     index = 0
+
+    # Train on each document
     for document in iqla.get_texts():
         # Conversions
         try:
@@ -118,9 +119,12 @@ if __name__ == "__main__":
         index2document[index] = document.get_path()
         document2author[document.get_path()] = document.get_author().get_name()
 
+        # Tokenizing
+        tokens = tokenizer(document.get_text())
+
         # Train
-        logger.info(u"Adding document {} as {}".format(document.get_path(), index))
-        classifier.train(tokenizer(document.get_text()), index)
+        logger.info(u"Adding document {} as {} of length {}".format(document.get_path(), index, len(tokens)))
+        classifier.train(tokens, index)
 
         # Next index
         index += 1
@@ -131,7 +135,7 @@ if __name__ == "__main__":
 
     # Get author embeddings
     document2vec = classifier.get_embeddings()
-    logger.info(u"Author2Vec shape : {}x{}".format(len(document2vec.keys()), document2vec[0].shape[0]))
+    logger.info(u"Document2Vec shape : {}x{}".format(len(document2vec.keys()), document2vec[0].shape[0]))
 
     # Similarity matrix & links matrix
     similarity_matrix = nsNLP.clustering.tools.DistanceMeasures.similarity_matrix(document2vec)
