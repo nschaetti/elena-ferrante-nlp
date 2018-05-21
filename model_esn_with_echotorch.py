@@ -221,7 +221,7 @@ for k in range(10):
         y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
 
         # Compare
-        if torch.equal(y_predicted, torch.FloatTensor([class_to_ix[labels[0]]])):
+        if torch.equal(y_predicted.data, torch.LongTensor([class_to_ix[labels[0]]])):
             successes += 1.0
         # end if
 
@@ -229,7 +229,7 @@ for k in range(10):
         count += 1.0
 
         # OOV
-        oov += italian_book_dataset.transform.transformers[embedding_transformer_pos].oov
+        oov += italian_book_dataset.transform.transforms[embedding_transformer_pos].oov
     # end for
 
     # Success rate
