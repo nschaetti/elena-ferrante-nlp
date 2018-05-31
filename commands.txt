@@ -1,0 +1,2 @@
+python feature_selector_ccsaa.py --output feature_selectors/ccsaa/ --n-gram c1
+python feature_selector_cgfs.py --output feature_selectors/cgfs/ --n-gram 2 --embedding-path ~/Projets/TURING/Datasets/fasttext/wiki.it/wiki.it.vec
