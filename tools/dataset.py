@@ -19,7 +19,7 @@ def load_dataset(root, save_transform):
     :return:
     """
     # Load from directory
-    italian_books_dataset = torchlanguage.datasets.FileDirectory(root=root, save_transform=save_transform)
+    italian_books_dataset = torchlanguage.datasets.FileDirectory(root=root, save_transform=save_transform, shuffle=True)
 
     # Reuters C50 dataset training
     italian_loader_train = torch.utils.data.DataLoader(
